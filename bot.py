@@ -2,25 +2,26 @@ import requests
 from bs4 import BeautifulSoup
 import os
 
-# 텔레그램 설정 (나중에 깃허브 설정에서 넣을 거예요)
 TOKEN = os.environ.get('TELEGRAM_TOKEN')
 CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID')
 
-# 감시할 사이트 정보
 SITES = [
     {
         "name": "경기도 문화예술의전당",
         "url": "https://www.ggac.or.kr/ggac/M0000121/board/list.do",
-        "selector": "td.num" # 게시판 번호 위치
+        "selector": "td.num"
     },
     {
         "name": "용인문화재단",
         "url": "https://www.yicf.or.kr/cop/bbs/selectBoardList.do?bbsId=notice_main",
-        "selector": "td.ntt_substitel.left a"  # 이 부분을 더 정확하게 수정했습니다
+        "selector": "td.ntt_substitel" # 좀 더 넓은 범위를 잡도록 수정
     }
 ]
 
 def send_message(text):
+    if not TOKEN or not CHAT_ID:
+        print("토큰이나 채팅 ID 설정이 누락되었습니다.")
+        return
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
     params = {"chat_id": CHAT_ID, "text": text}
     requests.get(url, params=params)
@@ -28,24 +29,32 @@ def send_message(text):
 def check():
     for site in SITES:
         try:
-            res = requests.get(site["url"])
+            # 브라우저인 척 속이기 위해 헤더 추가 (매우 중요!)
+            headers = {'User-Agent': 'Mozilla/5.0'}
+            res = requests.get(site["url"], headers=headers)
             soup = BeautifulSoup(res.text, 'html.parser')
-            # 가장 최신글의 내용을 가져옴
-            latest = soup.select_one(site["selector"]).text.strip()
             
-            # 이전 데이터와 비교 (파일 저장 방식)
-            file_path = f"{site['name']}.txt"
-            old_data = ""
-            if os.path.exists(file_path):
-                with open(file_path, "r") as f:
-                    old_data = f.read().strip()
+            target = soup.select_one(site["selector"])
             
-            if old_data != latest:
-                send_message(f"🔔 [신규 공고!] {site['name']}\n내용: {latest}\n바로가기: {site['url']}")
-                with open(file_path, "w") as f:
-                    f.write(latest)
+            if target:
+                latest = target.get_text().strip()
+                file_path = f"{site['name']}.txt"
+                
+                old_data = ""
+                if os.path.exists(file_path):
+                    with open(file_path, "r", encoding='utf-8') as f:
+                        old_data = f.read().strip()
+                
+                if old_data != latest:
+                    send_message(f"🔔 [신규 공고!] {site['name']}\n내용: {latest}\n바로가기: {site['url']}")
+                    with open(file_path, "w", encoding='utf-8') as f:
+                        f.write(latest)
+                print(f"{site['name']} 확인 완료: {latest}")
+            else:
+                print(f"{site['name']}에서 데이터를 찾지 못했습니다.")
+                
         except Exception as e:
-            print(f"Error: {e}")
+            print(f"{site['name']} 에러 발생: {e}")
 
 if __name__ == "__main__":
     check()
