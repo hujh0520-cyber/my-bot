@@ -1,3 +1,36 @@
+name: Check DaeGuan Update
+
 on:
   schedule:
-    - cron: '0 0 * * *'  # 하루에 한 번 실행으로 변경
+    - cron: '0 0 * * *'  # 매일 한국 시간 기준 오전 9시경 시행
+  workflow_dispatch:      # 수동으로 실행해볼 수 있는 버튼 생성
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          pip install requests beautifulsoup4
+
+      - name: Run script
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python bot.py
+
+      - name: Keep session (Commit changes)
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add .
+          git commit -m "Update last checked data" || exit 0
+          git push
