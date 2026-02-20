@@ -16,7 +16,7 @@ SITES = [
     {
         "name": "용인문화재단",
         "url": "https://www.yicf.or.kr/cop/bbs/selectBoardList.do?bbsId=notice_main",
-        "selector": "td.subject a" # 게시판 제목 위치
+        "selector": "td.ntt_substitel.left a"  # 이 부분을 더 정확하게 수정했습니다
     }
 ]
 
