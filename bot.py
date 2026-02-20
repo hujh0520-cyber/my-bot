@@ -14,7 +14,7 @@ SITES = [
     {
         "name": "용인문화재단",
         "url": "https://www.yicf.or.kr/cop/bbs/selectBoardList.do?bbsId=notice_main",
-        "selector": ".ntt_substitel" # 앞에 마침표(.)를 붙여서 '클래스'라는 걸 명확히 알려줍니다
+        "selector": "tbody tr"  # 표의 첫 번째 줄을 통째로 낚아채는 명령입니다
     }
 ]
 
